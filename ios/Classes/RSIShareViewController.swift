@@ -67,6 +67,15 @@ open class RSIShareViewController: SLComposeServiceViewController {
                                                          index: index,
                                                          content: content)
                                     }
+                                case .image:
+                                    if let img = data as? UIImage {
+                                        this.handleMedia(forUIImage: img, index: index, content: content)
+                                    } else if let url = data as? URL {
+                                        this.handleMedia(forFile: url,
+                                                         type: type,
+                                                         index: index,
+                                                         content: content)
+                                    }    
                                 default:
                                     if let url = data as? URL {
                                         this.handleMedia(forFile: url,
@@ -157,6 +166,24 @@ open class RSIShareViewController: SLComposeServiceViewController {
         }
     }
     
+    private func handleMedia(forUIImage image: UIImage, index: Int, content: NSExtensionItem) {
+        if let strBase64 = image.pngData()?.base64EncodedString() {
+            let url = "data:image/png;base64, " + strBase64;
+
+            sharedMedia.append(SharedMediaFile(
+                path: url,
+                mimeType: "image/png",
+                type: .url
+            ))
+        }
+
+        if index == (content.attachments?.count ?? 0) - 1 {
+            if shouldAutoRedirect() {
+                saveAndRedirect()
+            }
+        }
+    }
+
     
     // Save shared media and redirect to host app
     private func saveAndRedirect(message: String? = nil) {
