@@ -7,7 +7,14 @@ plugins {
 android {
     namespace "com.kasem.receive_sharing_intent_example"
     compileSdk 35
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 
+    kotlinOptions {
+        jvmTarget = '17'
+    }
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
