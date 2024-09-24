@@ -4,7 +4,6 @@ import android.content.ContentUris
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
@@ -103,6 +102,8 @@ object FileDirectory {
                     Log.i("FileDirectory", "File name: $fileName")
                     targetFile = File(context.cacheDir, fileName)
                 }
+            } catch (e: Exception) {
+                Log.e("FileDirectory", "Error querying content resolver", e)
             } finally {
                 cursor?.close()
             }
@@ -120,10 +121,16 @@ object FileDirectory {
                 targetFile = File(context.cacheDir, "${prefix}_${Date().time}.$type")
             }
 
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(targetFile).use { fileOut ->
-                    input.copyTo(fileOut)
+            val modifiedUri = selectionArgs?.let { args -> uri.buildUpon().appendPath(args.first()).build() } ?: uri
+            try {
+                context.contentResolver.openInputStream(modifiedUri)?.use { input ->
+                    FileOutputStream(targetFile).use { fileOut ->
+                        input.copyTo(fileOut)
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e("FileDirectory", "Error accessing file", e)
+                return null
             }
             return targetFile.path
         }
@@ -138,6 +145,8 @@ object FileDirectory {
                 val columnIndex = cursor.getColumnIndexOrThrow(column)
                 return cursor.getString(columnIndex)
             }
+        } catch (e: Exception) {
+            Log.e("FileDirectory", "Error querying content resolver", e)
         } finally {
             cursor?.close()
         }
@@ -149,7 +158,7 @@ object FileDirectory {
      * @param uri The Uri to check.
      * @return Whether the Uri authority is ExternalStorageProvider.
      */
-    fun isExternalStorageDocument(uri: Uri): Boolean {
+    private fun isExternalStorageDocument(uri: Uri): Boolean {
         return "com.android.externalstorage.documents" == uri.authority
     }
 
@@ -157,7 +166,7 @@ object FileDirectory {
      * @param uri The Uri to check.
      * @return Whether the Uri authority is DownloadsProvider.
      */
-    fun isDownloadsDocument(uri: Uri): Boolean {
+    private fun isDownloadsDocument(uri: Uri): Boolean {
         return "com.android.providers.downloads.documents" == uri.authority
     }
 
@@ -165,7 +174,7 @@ object FileDirectory {
      * @param uri The Uri to check.
      * @return Whether the Uri authority is MediaProvider.
      */
-    fun isMediaDocument(uri: Uri): Boolean {
+    private fun isMediaDocument(uri: Uri): Boolean {
         return "com.android.providers.media.documents" == uri.authority
     }
 }
